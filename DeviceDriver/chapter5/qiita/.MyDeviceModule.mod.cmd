@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/DeviceDriver/chapter5/qiita/MyDeviceModule.mod := { echo  /home/pi/kernel/DeviceDriver/chapter5/qiita/myDeviceDriver.o; echo; } > /home/pi/kernel/DeviceDriver/chapter5/qiita/MyDeviceModule.mod

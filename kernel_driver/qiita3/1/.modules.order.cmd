@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/kernel_driver/qiita3/1/modules.order := {   echo /home/pi/kernel/kernel_driver/qiita3/1/mydevicemodule.ko; :; } | awk '!x[$$0]++' - > /home/pi/kernel/kernel_driver/qiita3/1/modules.order

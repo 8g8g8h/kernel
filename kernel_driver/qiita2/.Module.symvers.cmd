@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/kernel_driver/qiita2/Module.symvers := sed 's/ko$$/o/' /home/pi/kernel/kernel_driver/qiita2/modules.order | scripts/mod/modpost -m -a   -o /home/pi/kernel/kernel_driver/qiita2/Module.symvers -e -i Module.symvers   -T -

@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/DeviceDriver/chapter5/1/queue.ko := ld -r  -EL  --build-id  -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds -o /home/pi/kernel/DeviceDriver/chapter5/1/queue.ko /home/pi/kernel/DeviceDriver/chapter5/1/queue.o /home/pi/kernel/DeviceDriver/chapter5/1/queue.mod.o;  true

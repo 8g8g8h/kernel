@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/DeviceDriver/chapter5/qiita/MyDeviceModule.ko := ld -r  -EL  --build-id  -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds -o /home/pi/kernel/DeviceDriver/chapter5/qiita/MyDeviceModule.ko /home/pi/kernel/DeviceDriver/chapter5/qiita/MyDeviceModule.o /home/pi/kernel/DeviceDriver/chapter5/qiita/MyDeviceModule.mod.o;  true

@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/kernel_driver/qiita3/mydevicemodule.ko := ld -r  -EL  --build-id=sha1  -T scripts/module.lds -o /home/pi/kernel/kernel_driver/qiita3/mydevicemodule.ko /home/pi/kernel/kernel_driver/qiita3/mydevicemodule.o /home/pi/kernel/kernel_driver/qiita3/mydevicemodule.mod.o;  true

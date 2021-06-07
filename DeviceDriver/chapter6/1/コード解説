@@ -1,0 +1,158 @@
+6-1コード解説
+
+rwlock_t
+
+rwlock_tという、読み書きロックを適用している
+
+これは、共有リソースに対して、複数のスレッドからの読み取りや排他的な書き込みをロックするもの
+
+途中で書き込みなどが行われると大変である。また、
+
+------------------------------------------------------------------------------
+
+dev_tは、デバイス番号を表すもの
+
+#ifdef	__KERNEL__
+
+typedef	__u32 __kernel_dev_t;
+
+....snip....
+
+#endif
+
+-------------------------------------------------------------------------------
+file構造体
+
+struct file{
+	struct path						f_path
+#define f_dentry					f_path.dentry
+	struct inode					*f_inode;
+	const struct file_operations	*f_op;
+	
+	atomic_long_t					f_count
+	fmode_t							f_mode
+	loff_t							f_pos
+	void							*praivate_data
+};
+
+f_opは、ドライバのロード時にメジャー番号の登録をするのと同時に、設定したシステムコールハンドラへのポインタを登録している。
+
+これは、システムコールハンドラであり、ユーザーがデバイスファイルに対してシステムコールを発行できるようにするために、ハンドラをカーネルに登録するためのもの。
+
+f_dentryはディレクトリに含まれている名前の要素を表す構造体。ファイルの名前などが含まれる
+
+f_inodeは、すべてのファイルシステムで共通する要素を保存する構造体。
+
+struct inode{
+	umode_t			i_mode;
+	unsigned short	i_opflags;
+	
+	.......
+
+	bdev_t i_rdev			/*メジャー番号とマイナー番号を格納するもの*/
+
+	void *i_private			/*ドライバプライベートポインタ*/
+
+}
+
+ドライバプライベートポインタは、主な使い方が以下の3つ
+・openハンドラでメモリを確保、プライベートポインタへつなげる
+・writeやreadなどのハンドラでプライベートメンバを参照する
+・closeハンドラで確保したメモリを確保する
+
+praivate_dataはfile構造体のメンバで、ドライバ開発者が好き勝手にいじることができる領域
+
+if(!capable(CAP_SYSY_ADMIN)){
+	retval=-EFAULT;
+	goto done;
+}
+
+ioctlコマンドによっては、root権限にのみ利用権限を与えるなどをやるためにパーミッションを制限する
+
+上のコードでルート権限のチェックなど行っている
+
+if(!access_ok(VERIFY_READ,(void __user *)arg,_IOC_SIZE(cmd))){
+	retval=-EFAULT;
+	goto done;
+}
+
+ユーザ空間のポインタに対してアクセスするときに、ポインタが妥当かどうかの判断をするために使う
+
+if(copy_from_user(&data,(int __user*)arg,sizeof(data))){
+	retval=-EFAULT;
+	goto done;
+}
+
+ユーザからデータを持ってくることができるかどうか
+(copy_to_userとは、カーネル空間のポインタから、ユーザープロセスのポインタへ指定サイズぶんコピーする)
+
+copy_from_userとは、ユーザ空間のポインタから、カーネル空間のポインタへ指定サイズ分コピーする
+
+spin_lock(&val)が成功したあと、ロック変数valで保護された資源を安全にアクセスできる。資源へのアクセスが終了したら、spin_unlock(&val)で資源のロックの開放を行う。
+
+これは、read,writeが用意されている。
+
+read_lock(&val)
+資源のreadロックを行う。もし既に資源がwriteロックされている場合は、writeロックが解除されるまで待つ。
+などで安全にアクセスすることができる。
+
+rwlock_tは以下のような構造体が使用されている。
+
+struct typedef{
+	volatile unsigned int lock;
+#ifdef CONFIG_PREEMPT
+	unsigned int break_lock;
+#endif
+}rwlock_t;
+
+lockは32bitで表現されている
+
+0~23:読み込み処理を行っているカーネルの実行パス数
+24	:ロック解除フラグ
+
+このrwlock_tを初期化する際に、ロックされていない状態(RW_LOCK_BITSを設定している)で初期化されている
+
+これで読み込みや書き込みなどを安全に行っている
+
+
+ioctl_cmdは、自分で定義する
+
+今回は、reg,offset,valの3つを定義している。
+
+ここで設定したパラメータの定義は自由に決めることができる(可変引数)
+
+ここでは値を渡すためにvalを用いている。
+
+devone_initでは、動的にメジャー番号などを登録する
+
+cdev構造体を使ってメジャー番号の登録を行う
+
+cdev構造体は、以下のような構造体である
+
+struct cdev{
+	struct kobject	kobj;
+	struct module *owner;
+	struct file_operations *ops;
+	struct list_head	head;
+	dev_t dev;			/*minor番号とmajor番号が格納されている変数*/
+	unsigned int count;
+};
+
+MKDEVでメジャー番号とマイナー番号の組み合わせからdev_t型の変数を作る
+
+class_deviceは、udevを使うためにクラス登録するためのクラス
+
+udevは、OSがデバイスを検出したタイミングでデバイスファイルを作るようなシステム
+
+udevの仕組みは、
+最初にドライバのクラス登録を行い、/sys/class配下にドライバ情報を作る
+
+class_device_create(struct class *cls,struct class_device *parent,dev_t devt,struct device *device,const char *fmt,)
+
+第一引数(cls)は、先のclass_create()の返り値
+第二引数(parent)は、親クラスの指定
+第三引数(devt)は、devファイルに記述するメジャー番号とマイナー番号を指定する。
+第四引数(device)は、クラスドライバに関連付けする「struct device」が指定します。
+第五引数(fmt)は、デバイス名です。
+
+ドライバをアンロードするときは、登録済みのデバイス名を削除する場合は、class_device_destroy()を使う

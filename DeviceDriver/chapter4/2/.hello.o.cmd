@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/DeviceDriver/chapter4/2/hello.o := ld  -EL    -r -o /home/pi/kernel/DeviceDriver/chapter4/2/hello.o /home/pi/kernel/DeviceDriver/chapter4/2/main.o /home/pi/kernel/DeviceDriver/chapter4/2/sub.o

@@ -1,0 +1,20 @@
+include<linux/module.h>
+#include<linux/init.h>
+
+ここは、/lib/modules/uname -r/build/include
+にあるライブラリを読み込んでいる
+
+static int hello_init(void){
+//ここは、ドライバがロードされるときのエントリポイント
+//外部モジュールから呼び出してほしい場合はexport_symbolなどを用いる
+	printk(KERN_ALERT "driver load\n");
+//カーネルバッファにprintkの出力がでる
+	return 0;
+}
+
+static void hello_exit(void){
+	printk(KERN_ALERT "driver unloaded\n");
+}
+
+module_init(hello_init);//ここでinsmodのエントリポイントを指定する
+module_exit(hello_exit);//ここでrmmodでのエントリポイントを指定する

@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/DeviceDriver/chapter5/qiita2/MyDeviceModule.o := ld  -EL    -r -o /home/pi/kernel/DeviceDriver/chapter5/qiita2/MyDeviceModule.o /home/pi/kernel/DeviceDriver/chapter5/qiita2/myDeviceDriver.o

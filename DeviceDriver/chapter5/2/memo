@@ -1,0 +1,51 @@
+ここで作ったdevone.cはドライバのソースコードである。これはデバイスファイルではないので注意。
+デバイスファイルは、/dev/devoneのように/devの下にあるファイル
+
+また、sample.cでopenシステムコールとcloseシステムコールを呼び出している。すなわちこれは、ユーザープロセスを示している。
+
+実際の結果はこちら
+
+[ 8449.878151] devone driver (major 234)installed.¥n
+[11457.098665] devone_open:major 234 minor 0 (pid 4991)¥n
+[11457.098678] i_private=86f8b7d6 private_data=7273e7f9\xa5n
+[11477.098946] devone_close:major 234 minor 0 (pid 4991)¥n
+[11477.098955] i_private=86f8b7d6 private_data=7273e7f9\xa5n
+[11924.463292] devone_open:major 234 minor 0 (pid 5028)¥n
+[11924.463314] i_private=86f8b7d6 private_data=08b7ced1\xa5n
+[11924.466002] devone_open:major 234 minor 0 (pid 5027)¥n
+[11924.466019] i_private=86f8b7d6 private_data=91f0e90f\xa5n
+[11944.463649] devone_close:major 234 minor 0 (pid 5028)¥n
+[11944.463672] i_private=86f8b7d6 private_data=08b7ced1\xa5n
+[11944.466338] devone_close:major 234 minor 0 (pid 5027)¥n
+[11944.466356] i_private=86f8b7d6 private_data=91f0e90f\xa5n
+
+
+順番を以下に示す
+
+sample.cを実行する
+↓
+openプロセスまで到達する
+↓
+devone.cでopenの部分を実行する
+↓
+またsample.cに戻り、closeまで実行する
+↓
+devone.cのcloseの部分を実行する
+
+終わり
+
+-----------------------------------------------
+forkの結果
+
+[14674.057087] devone_open:major 234 minor 0 (pid 5180)¥n
+[14674.057106] i_private=86f8b7d6 private_data=6922e656\xa5n
+[14687.060277] devone_close:major 234 minor 0 (pid 5180)¥n
+[14687.060300] i_private=86f8b7d6 private_data=6922e656\xa5n
+
+
+自分でマイナー番号を指定するのではなくmknodを用いれば勝手に割り振ってくれる
+[14861.458150] devone_open:major 234 minor 2 (pid 5199)¥n
+[14861.458169] i_private=7eaa7853 private_data=ea156618\xa5n
+[14861.458931] devone_close:major 234 minor 2 (pid 5199)¥n
+[14861.458940] i_private=7eaa7853 private_data=ea156618\xa5n
+　

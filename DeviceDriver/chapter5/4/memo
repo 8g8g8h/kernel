@@ -1,0 +1,157 @@
+readやwriteをするために同期処理が必要である。
+(高速で切り替えながら)同時に動作するプロセスや割り込みなどの要求に対して、競合しないようカーネルの各機能を提供するために適切な同期を取る必要がある。
+
+プロセスコンテキストでは、プリエンプティブは可能である。
+
+スピンロックは、マルチプロセッサ環境に特化して設計されたロック機構
+
+ロックを取得し処理を継続する。既にロックが取得されている場合にはロック解除までループを回して待機する。
+
+このスピンロックの中に読み書き用のものがある
+
+これは並列実行を効率的に行うために導入されたもの。書き込み時は排他的なロックを行うが読み込み時は同時に複数のカーネル実行パスからアクセスが可能となる。
+
+読み込み用のスピンロックでは以下の構造体が使用される。
+
+typedef struct {
+    volatile unsigned int lock;
+#ifdef CONFIG_PREEMPT
+    unsigned int break_lock;
+#endif
+} rwlock_t;
+
+read_lockマクロを使用する
+
+// include/linux/spinlock.h
+#define read_lock(lock)        _read_lock(lock)
+
+#define _read_lock(lock)   \
+do { \
+   preempt_disable(); \
+   _raw_read_lock(lock); \
+   __acquire(lock); \
+} while(0)
+
+読み込みロックの解除は以下のマクロを使用する
+
+// include/linux/spinlock.h
+#define read_unlock(lock)  _read_unlock(lock)
+
+#define _read_unlock(lock) \
+do { \
+   _raw_read_unlock(lock); \
+   preempt_enable(); \
+   __release(lock); \
+} while(0)
+
+#define _raw_read_unlock(rw)   asm volatile("lock ; incl %0" :"=m" ((rw)->lock) : : "memory")
+
+書き込みロックをするために以下の関数を用いる
+
+// include/linux/spinlock.h
+#define write_lock(lock)   _write_lock(lock)
+
+#define _write_lock(lock) \
+do { \
+   preempt_disable(); \
+   _raw_write_lock(lock); \
+   __acquire(lock); \
+} while(0)
+
+デバイス・ドライバが動作するカーネル空間とユーザ空間では、異なるアドレス空間である。
+カーネル空間とユーザ空間でデータをコピーするときに、以下の関数を使う
+
+unsigned long
+copy_from_user(void *to, const void __user *from, unsigned long n)
+ユーザ空間からのデータをカーネル空間にコピーする
+
+unsigned long
+copy_to_user(void __user *to, const void *from, unsigned long n)
+カーネル空間からのデータをユーザ空間にコピーする
+
+
+-----------------------------------------------------------------
+
+MKDEVはデバイス番号の操作を行うための関数
+
+__func__は、定義されている関数で__func__が書かれている関数名を示す。
+
+
+char __user *bufは、ユーザープロセスがread()で指定したバッファへのポインタである。
+
+loff_t  *fposはこの関数がどこの展開されるかのオフセットを示している。
+
+
+-------------------------------------------------------------------
+ドライバを動的に登録する方法
+
+alloc_chrdev_regionでメジャー番号の動的確保をする
+
+int alloc_chrdev_region(dev_t *dev,unsigned baseminor,unsigned count,const char *name)
+
+空いているメジャー番号の確保とベースとなるマイナー番号とその個数を予約
+
+baseminor引数はベースとなるマイナー番号を指定する
+
+countは必要なマイナー番号の個数
+
+dev_t型というデータ型で表現される。
+
+typedef u32 __kernel_dev_t
+typedef __kernel_dev_t dev_t
+
+ここからメジャー番号とマイナー番号を表現することができる
+
+イメージとしては32bitの中にそれぞれ20bit 12bitでマイナー番号とメジャー番号が入っている。
+
+ここからメジャー番号とマイナー番号を取り出すために以下のマクロを使う
+MAJOR(dev) メジャー番号
+MINOR(dev)　マイナー番号
+MKDEV(ma,mi)　両方を取り出す
+
+void cdev_init(struct cdev *cdev, struct file_operations *fops)
+
+cdev_initはcdev構造体変数を初期化。システムコールハンドラ(fops)を登録している。
+
+キャラクタデバイス構造体のopsメンバに引数であるシステムコールハンドラ関数のテーブル
+を設定している。
+
+cdev(キャラクタデバイス構造体)は以下のようになっている
+
+struct cdev {
+    struct kobject kobj;
+    struct module *owner;
+    struct file_operations *ops;
+    struct list_head list;
+    dev_t dev;
+    unsigned int count;
+};
+
+ここの中には、システムコールテーブルを保持するメンバが存在している。
+
+cdev構造体とは、
+
+これを呼び出したあと、cdev構造体変数のownerに「THIS_MODULE」を設定する必要あり
+
+int cdev_add(struct cdev *p, dev_t dev, unsigned count)
+
+
+
+
+int alloc_chrdev_region(dev_t *dev, unsigned baseminor, unsigned count,const char *name)
+  dev_t *dev              保存先 割り当て結果dev_t変数ポインタ
+  unsigned int baseminor  マイナー番号の開始番号
+  unsigned int count      割り当てるマイナー番号の数
+  const char *name        デバイス名
+
+
+void cdev_init(struct cdev *cdev, struct file_operations *fops)
+  struct cdev *cdev       保存先 キャラクタデバイス構造体ポインタ
+  struct file_operations *fops  ファイルオペレーションズ構造体
+
+
+int cdev_add(struct cdev *p, dev_t dev, unsigned count)
+  struct cdev *p          登録するキャラクタデバイス構造体
+  dev_t dev               デバイス
+  unsigned count          数
+

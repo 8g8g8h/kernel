@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/DeviceDriver/chapter5/1/list.ko := ld -r  -EL  --build-id  -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds -o /home/pi/kernel/DeviceDriver/chapter5/1/list.ko /home/pi/kernel/DeviceDriver/chapter5/1/list.o /home/pi/kernel/DeviceDriver/chapter5/1/list.mod.o;  true

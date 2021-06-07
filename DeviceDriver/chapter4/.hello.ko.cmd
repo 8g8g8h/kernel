@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/DeviceDriver/chapter4/hello.ko := ld -r  -EL  --build-id  -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds -o /home/pi/kernel/DeviceDriver/chapter4/hello.ko /home/pi/kernel/DeviceDriver/chapter4/hello.o /home/pi/kernel/DeviceDriver/chapter4/hello.mod.o;  true

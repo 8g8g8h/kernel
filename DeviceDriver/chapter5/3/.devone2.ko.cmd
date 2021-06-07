@@ -1,0 +1,1 @@
+cmd_/home/pi/kernel/DeviceDriver/chapter5/3/devone2.ko := ld -r  -EL  --build-id  -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds -o /home/pi/kernel/DeviceDriver/chapter5/3/devone2.ko /home/pi/kernel/DeviceDriver/chapter5/3/devone2.o /home/pi/kernel/DeviceDriver/chapter5/3/devone2.mod.o;  true
